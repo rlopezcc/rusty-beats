@@ -5,6 +5,7 @@ use std::path::Path;
 use std::fs::File;
 use std::error::Error;
 use std::io::Read;
+use std::process;
 use std::{thread, time};
 
 
@@ -37,18 +38,23 @@ impl Track {
 
 fn main () {
     let mut trackfile = match File::open(&Path::new("tracks.txt")) {
-        Err(why) => panic!("couldn't open tracks.txt: {}", why.description()),
+        Err(why) => {
+            println!("couldn't open tracks.txt: {}", why.description());
+            process::exit(1);
+        }
         Ok(file) => file
     };
 
     let mut contents: String = String::new(); 
     match trackfile.read_to_string(&mut contents) {
-        Err(_) => panic!("Cannot read trackfile"),
+        Err(_) => {
+            println!("Cannot read trackfile.");
+            process::exit(1);
+        },
         Ok(string) => string
     };
 
     let mut tracks: Vec<Track> = Vec::new();
-
     for line in contents.lines() {
         tracks.push(Track::from_trackfile_line(line));
     }
@@ -57,12 +63,22 @@ fn main () {
 
     let mut max_track_len = 0;
 
+    // Load sounds from tracks
     for track in &tracks {
         let path: String = "sounds/".to_string() + &(track.name).clone() + ".ogg";
-        sounds.insert(track.name.clone(), Sound::new(&path).unwrap());
-        if track.data.len() >= max_track_len {
-            max_track_len = track.data.len();
+        match Sound::new(&path) {
+            Some(sound) => {
+                sounds.insert(track.name.clone(), sound);
+                if track.data.len() >= max_track_len {
+                    max_track_len = track.data.len();
+                }
+            }
+            None => {
+                println!("Sound file not found {}", path);
+                process::exit(1);
+            }
         }
+
     } 
 
     let delay = time::Duration::from_millis(150);
