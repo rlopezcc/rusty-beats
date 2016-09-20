@@ -8,20 +8,28 @@ use std::io::Read;
 use std::{thread, time};
 
 
-#[derive(Debug)]
 struct Track {
     name: String,
     data: Vec<i32>
 }
 
 impl Track {
-    pub fn from_trackfile_line(line: &str) -> Track{
-        let mut splitted = line.split_whitespace();
+    // Create the Track instance from a line like "kick: ---+-++--"
+    pub fn from_trackfile_line(line: &str) -> Track {
+        let mut splitted = line.split(":");
+
         let name: String = splitted.next().unwrap().to_string();
+
         let mut data: Vec<i32> = Vec::new();
-        for _ in splitted {
-            data.push(1);
-            data.push(0);
+
+        let data_str = splitted.next().unwrap().trim();
+
+        for sub in data_str.chars() {
+            if sub == '+' {
+                data.push(1);
+            } else {
+                data.push(0);
+            }
         }
         return Track {name: name, data: data};
     }
@@ -39,24 +47,34 @@ fn main () {
         Ok(string) => string
     };
 
-    let track: Track = Track::from_trackfile_line(&contents.lines().next().unwrap());
+    let mut tracks: Vec<Track> = Vec::new();
+
+    for line in contents.lines() {
+        tracks.push(Track::from_trackfile_line(line));
+    }
 
     let mut sounds = HashMap::new();
 
-    let path: String = "sounds/".to_string() + &track.name + ".ogg";
+    let mut max_track_len = 0;
 
-    sounds.insert(&track.name, Sound::new(&path).unwrap());
-
-    let ten_millis = time::Duration::from_millis(500);
-
-    for i in 0..track.data.len() {
-        if track.data[i] != 0 {
-            match sounds.get_mut(&track.name) {
-                Some(mut sound) => {sound.play()},
-                _ => println!("couldn't play {}", &track.name)
-            }
+    for track in &tracks {
+        let path: String = "sounds/".to_string() + &(track.name).clone() + ".ogg";
+        sounds.insert(track.name.clone(), Sound::new(&path).unwrap());
+        if track.data.len() >= max_track_len {
+            max_track_len = track.data.len();
         }
-        thread::sleep(ten_millis);
-    }
+    } 
 
+    let delay = time::Duration::from_millis(150);
+    
+    loop {
+        for i in 0..max_track_len {
+            for track in &tracks { 
+                if track.data.len() > i && track.data[i] != 0 {
+                    sounds.get_mut(&track.name).unwrap().play()
+                }
+            }
+            thread::sleep(delay);
+        }
+    }
 }
