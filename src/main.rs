@@ -56,7 +56,9 @@ fn main () {
 
     let mut tracks: Vec<Track> = Vec::new();
     for line in contents.lines() {
-        tracks.push(Track::from_trackfile_line(line));
+        if !line.starts_with("#") {
+            tracks.push(Track::from_trackfile_line(line));
+        }
     }
 
     let mut sounds = HashMap::new();
@@ -67,7 +69,8 @@ fn main () {
     for track in &tracks {
         let path: String = "sounds/".to_string() + &(track.name).clone() + ".ogg";
         match Sound::new(&path) {
-            Some(sound) => {
+            Some(mut sound) => {
+                sound.set_volume(0.3);
                 sounds.insert(track.name.clone(), sound);
                 if track.data.len() >= max_track_len {
                     max_track_len = track.data.len();
@@ -81,7 +84,7 @@ fn main () {
 
     } 
 
-    let delay = time::Duration::from_millis(150);
+    let delay = time::Duration::from_millis(250);
     
     loop {
         for i in 0..max_track_len {

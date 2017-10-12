@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["rlopezcc <rlopez@sophilabs.com>"]
 
 [dependencies]
-ears = "0.3.5"
+ears = "0.4.0"
