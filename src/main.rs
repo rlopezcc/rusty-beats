@@ -7,7 +7,7 @@ use std::error::Error;
 use std::env;
 use std::io::Read;
 use std::process;
-use std::{thread, time};
+use std::time::{Duration, Instant};
 
 
 struct Track {
@@ -43,7 +43,6 @@ fn main () {
         &Some(v) => v.parse::<u64>().unwrap(),
         &None => 250,
     };
-    let delay = time::Duration::from_millis(delay_arg);
     let mut trackfile = match File::open(&Path::new("tracks.txt")) {
         Err(why) => {
             println!("couldn't open tracks.txt: {}", why.description());
@@ -91,14 +90,24 @@ fn main () {
 
     } 
 
+    let mut instant = Instant::now();
+    let mut first = true; // yes I did
     loop {
         for i in 0..max_track_len {
-            for track in &tracks { 
-                if track.data.len() > i && track.data[i] != 0 {
-                    sounds.get_mut(&track.name).unwrap().play()
+            let duration = Duration::from_millis(delay_arg);
+            loop {
+                if instant.elapsed() >= duration || first {
+                    for track in &tracks {
+                        if track.data.len() > i && track.data[i] != 0 {
+                            sounds.get_mut(&track.name).unwrap().play()
+                        }
+                    }
+                    instant = Instant::now();
+                    first = false;
+                    break;
                 }
+
             }
-            thread::sleep(delay);
         }
     }
 }
