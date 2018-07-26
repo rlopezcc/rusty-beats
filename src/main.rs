@@ -39,10 +39,11 @@ impl Track {
 
 fn main () {
     let args: Vec<String> = env::args().collect();
-    let delay_arg: u64 = match &args.get(1) {
+    let delay_bpm:  u64 = match &args.get(1) {
         &Some(v) => v.parse::<u64>().unwrap(),
-        &None => 250,
+        &None => 120,
     };
+    let delay_ms = 60000 / delay_bpm;
     let mut trackfile = match File::open(&Path::new("tracks.txt")) {
         Err(why) => {
             println!("couldn't open tracks.txt: {}", why.description());
@@ -94,7 +95,7 @@ fn main () {
     let mut first = true; // yes I did
     loop {
         for i in 0..max_track_len {
-            let duration = Duration::from_millis(delay_arg);
+            let duration = Duration::from_millis(delay_ms);
             loop {
                 if instant.elapsed() >= duration || first {
                     for track in &tracks {
